@@ -1,13 +1,33 @@
-@* Shows a tag-style list of skills. *@
-<div class="d-flex flex-wrap gap-2">
-    @foreach (var skill in Skills)
+@* Minimal, reusable tag list using strings (no model references). *@
+<div class="d-flex flex-wrap gap-2 @Class" style="@Style" @attributes="AdditionalAttributes">
+    @foreach (var tag in TagsToRender)
     {
-        <span class="badge rounded-pill text-bg-primary">@skill</span>
+        <span class="@BadgeClass"
+              role="@(OnClick.HasDelegate ? "button" : null)"
+              style="@(OnClick.HasDelegate ? "cursor:pointer;" : null)"
+              @onclick="(() => OnClick.InvokeAsync(tag))">
+            @tag
+        </span>
     }
 </div>
 
 @code {
-    private List<string> Skills = new()
+    // Data
+    [Parameter] public IEnumerable<string>? Items { get; set; }
+
+    // Interaction
+    [Parameter] public EventCallback<string> OnClick { get; set; }
+
+    // Styling / attributes
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public string Style { get; set; } = string.Empty;
+    [Parameter] public string BadgeClass { get; set; } = "badge rounded-pill text-bg-primary";
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    // Keep current <SkillTags /> usage working via sample data
+    private IEnumerable<string> TagsToRender => Items ?? SampleTags;
+
+    private static readonly List<string> SampleTags = new()
     {
         "C#",
         "Blazor",

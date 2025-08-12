@@ -1,13 +1,18 @@
-@* Renders a simple grid of project cards using dummy data. *@
-<div class="row row-cols-1 row-cols-md-2 g-3">
-    @foreach (var p in Projects)
+@* Reusable project grid without generics. Accepts Items or falls back to samples. *@
+<div class="row row-cols-1 row-cols-md-2 g-3 @Class" style="@Style" @attributes="AdditionalAttributes">
+    @foreach (var p in ItemsToRender)
     {
         <div class="col">
-            <div class="card h-100 shadow-sm">
-                <img src="@p.ImageUrl" class="card-img-top" alt="@p.Title" style="max-width: 20rem;" />
-                <div class="card-body" >
+            <div class="card h-100 shadow-sm @(OnItemClick.HasDelegate ? "cursor-pointer" : null)"
+                 role="@(OnItemClick.HasDelegate ? "button" : null)"
+                 @onclick="(() => OnItemClick.InvokeAsync(p))">
+                <img src="@p.ImageUrl" class="card-img-top" alt="@p.Title" style="max-width: @ImageMaxWidth;" />
+                <div class="card-body">
                     <h6 class="card-title mb-1">@p.Title</h6>
-                    <p class="card-text text-muted">@p.Description</p>
+                    @if (!string.IsNullOrWhiteSpace(p.Description))
+                    {
+                        <p class="card-text text-muted">@p.Description</p>
+                    }
                 </div>
             </div>
         </div>
@@ -15,17 +20,30 @@
 </div>
 
 @code {
-    private List<ProjectItem> Projects = new()
-    {
-        new() { Title = "Task Tracker", Description = "Manage tasks effectively", ImageUrl = "https://cdn-icons-png.flaticon.com/512/2098/2098402.png" },
-        new() { Title = "Weather App", Description = "Forecast weather using APIs", ImageUrl = "https://cdn-icons-png.flaticon.com/512/7477/7477790.png" },
-        new() { Title = "Admin Dashboard", Description = "Interactive dashboards", ImageUrl = "https://cdn-icons-png.flaticon.com/512/4727/4727307.png" }
-    };
-
-    private class ProjectItem
+    // Public so callers can create items to pass in
+    public class ProjectItem
     {
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string ImageUrl { get; set; } = string.Empty;
     }
+
+    [Parameter] public IEnumerable<ProjectItem>? Items { get; set; }
+    [Parameter] public EventCallback<ProjectItem> OnItemClick { get; set; }
+
+    // Styling / attributes
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public string Style { get; set; } = string.Empty;
+    [Parameter] public string ImageMaxWidth { get; set; } = "20rem";
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private IEnumerable<ProjectItem> ItemsToRender => Items ?? SampleItems;
+
+    // Keeps current <ProjectList /> usage working
+    private static readonly List<ProjectItem> SampleItems = new()
+    {
+        new() { Title = "Task Tracker", Description = "Manage tasks effectively", ImageUrl = "https://cdn-icons-png.flaticon.com/512/2098/2098402.png" },
+        new() { Title = "Weather App", Description = "Forecast weather using APIs", ImageUrl = "https://cdn-icons-png.flaticon.com/512/7477/7477790.png" },
+        new() { Title = "Admin Dashboard", Description = "Interactive dashboards", ImageUrl = "https://cdn-icons-png.flaticon.com/512/4727/4727307.png" }
+    };
 }
