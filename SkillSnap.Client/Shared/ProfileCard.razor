@@ -1,0 +1,14 @@
+@* Displays a profile card with placeholder data. *@
+<div class="card shadow-sm" style="max-width: 420px;">
+    <img src="@ProfileImageUrl" class="card-img-top" alt="Profile picture" />
+    <div class="card-body">
+        <h5 class="card-title mb-1">@Name</h5>
+        <p class="card-text text-muted">@Bio</p>
+    </div>
+</div>
+
+@code {
+    private string Name = "Jordan Developer";
+    private string Bio = "Full-stack developer passionate about learning new tech.";
+    private string ProfileImageUrl = "https://placehold.co/400x600";
+}

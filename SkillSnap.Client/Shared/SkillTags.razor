@@ -1,0 +1,19 @@
+@* Shows a tag-style list of skills. *@
+<div class="d-flex flex-wrap gap-2">
+    @foreach (var skill in Skills)
+    {
+        <span class="badge rounded-pill text-bg-primary">@skill</span>
+    }
+</div>
+
+@code {
+    private List<string> Skills = new()
+    {
+        "C#",
+        "Blazor",
+        "EF Core",
+        "REST",
+        "Git",
+        "Azure"
+    };
+}
