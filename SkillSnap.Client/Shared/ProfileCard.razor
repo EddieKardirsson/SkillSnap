@@ -1,14 +1,33 @@
-@* Displays a profile card with placeholder data. *@
-<div class="card shadow-sm" style="max-width: 420px;">
-    <img src="@ProfileImageUrl" class="card-img-top" alt="Profile picture" />
+@* Reusable profile card component. Pass Name, Bio, and ProfileImageUrl. *@
+<div class="card shadow-sm @Class" style="@Style" @attributes="AdditionalAttributes">
+    <img src="@ResolvedImageUrl" class="card-img-top" alt="@AltText" />
     <div class="card-body">
-        <h5 class="card-title mb-1">@Name</h5>
-        <p class="card-text text-muted">@Bio</p>
+        <h5 class="card-title mb-1">@DisplayName</h5>
+        @if (!string.IsNullOrWhiteSpace(Bio))
+        {
+            <p class="card-text text-muted">@Bio</p>
+        }
     </div>
 </div>
 
 @code {
-    private string Name = "Jordan Developer";
-    private string Bio = "Full-stack developer passionate about learning new tech.";
-    private string ProfileImageUrl = "https://placehold.co/400x600";
+    [Parameter] public string Name { get; set; } = string.Empty;
+    [Parameter] public string Bio { get; set; } = string.Empty;
+    [Parameter] public string ProfileImageUrl { get; set; } = string.Empty;
+
+    // Optional customization
+    [Parameter] public string AltText { get; set; } = "Profile picture";
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public string Style { get; set; } = "max-width: 420px;";
+
+    // Capture unmatched attributes for the root element (e.g., id, data-* attributes)
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string ResolvedImageUrl =>
+        string.IsNullOrWhiteSpace(ProfileImageUrl)
+            ? "https://picsum.photos/seed/picsum/400/600"
+            : ProfileImageUrl;
+
+    private string DisplayName => string.IsNullOrWhiteSpace(Name) ? "Anonymous" : Name;
 }
