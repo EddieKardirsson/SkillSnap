@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace SkillSnap.Api.Models;
+namespace SkillSnap.Shared.Models;
 
 public class PortfolioUser
 {

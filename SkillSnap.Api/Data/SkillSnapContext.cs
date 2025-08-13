@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using SkillSnap.Api.Models;
+using SkillSnap.Shared.Models;
 
 namespace SkillSnap.Api.Data;
 

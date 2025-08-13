@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkillSnap.Api", "SkillSnap.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkillSnap.Client", "SkillSnap.Client\SkillSnap.Client.csproj", "{9A4C6774-D271-4139-8821-B82320CA1271}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkillSnap.Shared", "SkillSnap.Shared\SkillSnap.Shared.csproj", "{0B9F8223-9377-4627-999A-BE39D6A27830}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,6 +40,18 @@ Global
 		{9A4C6774-D271-4139-8821-B82320CA1271}.Release|x64.Build.0 = Release|Any CPU
 		{9A4C6774-D271-4139-8821-B82320CA1271}.Release|x86.ActiveCfg = Release|Any CPU
 		{9A4C6774-D271-4139-8821-B82320CA1271}.Release|x86.Build.0 = Release|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Debug|x64.Build.0 = Debug|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Debug|x86.Build.0 = Debug|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Release|x64.ActiveCfg = Release|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Release|x64.Build.0 = Release|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Release|x86.ActiveCfg = Release|Any CPU
+		{0B9F8223-9377-4627-999A-BE39D6A27830}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -16,4 +16,8 @@
     <Folder Include="Services\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SkillSnap.Shared\SkillSnap.Shared.csproj" />
+  </ItemGroup>
+
 </Project>
