@@ -484,3 +484,5 @@ $RECYCLE.BIN/
 *.swp
 
 SkillSnap.Api/Data/skillsnap.db
+
+SkillSnap.Api/Keys.env
