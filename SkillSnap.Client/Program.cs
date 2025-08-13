@@ -13,13 +13,14 @@ public class Program
         var builder = WebAssemblyHostBuilder.CreateDefault(args);
         builder.RootComponents.Add<App>("#app");
 
-        // Option: named HttpClient + factory (choose either https or http)
+        // Configuration-based approach
+        var apiBaseAddress = builder.Configuration["ApiBaseAddress"] ?? "https://localhost:7261/";
+        
         builder.Services.AddHttpClient("SkillSnap.Api", client =>
         {
-            client.BaseAddress = new Uri("https://localhost:7261/"); // or "http://localhost:5025/"
+            client.BaseAddress = new Uri(apiBaseAddress);
         });
 
-        // Make the named client the default HttpClient for @inject HttpClient Http
         builder.Services.AddScoped(sp =>
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("SkillSnap.Api"));
 
