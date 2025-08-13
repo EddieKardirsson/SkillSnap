@@ -1,28 +1,51 @@
 ﻿@page "/"
-@using SkillSnap.Client.Shared
 
-<PageTitle>Home</PageTitle>
+<PageTitle>SkillSnap - Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-4 text-center mb-5">SkillSnap</h1>
+            <p class="lead text-center mb-5">Showcase your skills and projects</p>
+        </div>
+    </div>
 
-Welcome to your new 
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Sample Profile</h3>
+                </div>
+                <div class="card-body">
+                    <ProfileCard Name="John Developer" 
+                               Bio="Full-stack developer with passion for clean code" 
+                               ProfileImageUrl="" />
+                </div>
+            </div>
+        </div>
 
-@* Below is just for testing the components so they show up as they should *@
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Skills (Connected to API)</h3>
+                </div>
+                <div class="card-body">
+                    <SkillTags />
+                </div>
+            </div>
+        </div>
+    </div>
 
-<p>Blazor components test:</p>
-<ProfileCard
-    Name="Jordan Developer"
-    Bio="Full-stack developer passionate about learning new tech."
-    ProfileImageUrl="https://via.placeholder.com/800x300?text=Jordan" />
-
-<hr />
-
-<ProfileCard
-    Name="Casey Coder"
-    Bio="Loves building fast, accessible UIs."
-    Class="border-primary"
-    Style="max-width: 360px;" />
-<hr />
-<ProjectList />
-<hr />
-<SkillTags />
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Projects (Connected to API)</h3>
+                </div>
+                <div class="card-body">
+                    <ProjectList />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

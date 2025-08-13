@@ -1,4 +1,7 @@
-@* Reusable project grid without generics. Accepts Items or falls back to samples. *@
+@* Reusable project grid using real data from API *@
+@using SkillSnap.Shared.Models
+@inject ProjectService ProjectService
+
 <div class="row row-cols-1 row-cols-md-2 g-3 @Class" style="@Style" @attributes="AdditionalAttributes">
     @foreach (var p in ItemsToRender)
     {
@@ -19,6 +22,12 @@
     }
 </div>
 
+<!-- Testing buttons for POST functionality -->
+<div class="mt-3">
+    <button class="btn btn-primary me-2" @onclick="AddTestProject">Add Test Project</button>
+    <button class="btn btn-secondary" @onclick="RefreshProjects">Refresh Projects</button>
+</div>
+
 @code {
     // Public so callers can create items to pass in
     public class ProjectItem
@@ -37,13 +46,51 @@
     [Parameter] public string ImageMaxWidth { get; set; } = "20rem";
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
-    private IEnumerable<ProjectItem> ItemsToRender => Items ?? SampleItems;
+    // Real data from API
+    private List<Project> projects = new();
 
-    // Keeps current <ProjectList /> usage working
-    private static readonly List<ProjectItem> SampleItems = new()
+    private IEnumerable<ProjectItem> ItemsToRender => 
+        Items ?? projects.Select(p => new ProjectItem
+        {
+            Title = p.Title,
+            Description = p.Description,
+            ImageUrl = string.IsNullOrWhiteSpace(p.ImageUrl) 
+                ? "https://picsum.photos/seed/project/400/300" 
+                : p.ImageUrl
+        });
+
+    protected override async Task OnInitializedAsync()
     {
-        new() { Title = "Task Tracker", Description = "Manage tasks effectively", ImageUrl = "https://cdn-icons-png.flaticon.com/512/2098/2098402.png" },
-        new() { Title = "Weather App", Description = "Forecast weather using APIs", ImageUrl = "https://cdn-icons-png.flaticon.com/512/7477/7477790.png" },
-        new() { Title = "Admin Dashboard", Description = "Interactive dashboards", ImageUrl = "https://cdn-icons-png.flaticon.com/512/4727/4727307.png" }
-    };
+        projects = await ProjectService.GetProjectsAsync();
+    }
+
+    // Test POST functionality
+    private async Task AddTestProject()
+    {
+        var testProject = new Project
+        {
+            Title = $"Test Project {DateTime.Now:HH:mm:ss}",
+            Description = "This is a test project created from the UI",
+            ImageUrl = "https://picsum.photos/seed/test/400/300",
+            PortfolioUserId = 1 // Hardcoded for now
+        };
+
+        var createdProject = await ProjectService.AddProjectAsync(testProject);
+        if (createdProject != null)
+        {
+            Console.WriteLine($"Created project: {createdProject.Title}");
+            projects = await ProjectService.GetProjectsAsync(); // Refresh the list
+            StateHasChanged();
+        }
+        else
+        {
+            Console.WriteLine("Failed to create project");
+        }
+    }
+
+    private async Task RefreshProjects()
+    {
+        projects = await ProjectService.GetProjectsAsync();
+        StateHasChanged();
+    }
 }

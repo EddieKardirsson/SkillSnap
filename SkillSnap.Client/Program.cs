@@ -23,9 +23,8 @@ public class Program
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("SkillSnap.Api"));
 
         // Register the services that connect to the API
-        builder.Services.AddScoped<IPortfolioUserService, PortfolioUserService>();
-        builder.Services.AddScoped<IProjectService, ProjectService>();
-        builder.Services.AddScoped<ISkillService, SkillService>();
+        builder.Services.AddScoped<ProjectService>();
+        builder.Services.AddScoped<SkillService>();
 
         await builder.Build().RunAsync();
     }

@@ -1,25 +1,46 @@
+using System.Net.Http.Json;
 using SkillSnap.Shared.Models;
 
 namespace SkillSnap.Client.Services;
 
-public class SkillService : BaseApiService<Skill>, ISkillService
+public class SkillService
 {
-    public SkillService(HttpClient httpClient) 
-        : base(httpClient, "api/skills")
+    private readonly HttpClient _httpClient;
+
+    public SkillService(HttpClient httpClient)
     {
+        _httpClient = httpClient;
     }
 
-    public async Task<List<Skill>> GetSkillsByUserIdAsync(int userId)
+    public async Task<List<Skill>> GetSkillsAsync()
     {
         try
         {
-            var allSkills = await GetAllAsync();
-            return allSkills.Where(s => s.PortfolioUserId == userId).ToList();
+            var skills = await _httpClient.GetFromJsonAsync<List<Skill>>("api/skills");
+            return skills ?? new List<Skill>();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error getting skills for user {userId}: {ex.Message}");
+            Console.WriteLine($"Error getting skills: {ex.Message}");
             return new List<Skill>();
+        }
+    }
+
+    public async Task<Skill?> AddSkillAsync(Skill newSkill)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/skills", newSkill);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<Skill>();
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error adding skill: {ex.Message}");
+            return null;
         }
     }
 }
