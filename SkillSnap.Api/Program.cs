@@ -1,6 +1,10 @@
+using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using DotNetEnv;
 using SkillSnap.Api.Data;
 using SkillSnap.Shared.Models;
 
@@ -19,6 +23,31 @@ public class Program
         builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
             .AddEntityFrameworkStores<SkillSnapContext>()
             .AddDefaultTokenProviders();
+
+        // Configure JWT Authentication
+        Env.Load("Keys.env"); // Load environment variables from .env file if present
+        var jwtKey = Env.GetString("JWT_KEY")
+            ?? throw new InvalidOperationException("JWT_KEY environment variable is not set");
+        
+        var key = Encoding.UTF8.GetBytes(jwtKey);
+        
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+        });
         
         // Add services to the container.
         builder.Services.AddAuthorization();
