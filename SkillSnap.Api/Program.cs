@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SkillSnap.Api.Data;
+using SkillSnap.Shared.Models;
 
 namespace SkillSnap.Api;
 
@@ -12,6 +14,11 @@ public class Program
 
         builder.Services.AddDbContext<SkillSnapContext>(options =>
             options.UseSqlite("Data Source=./Data/skillsnap.db"));
+        
+        // Add ASP.NET Identity
+        builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+            .AddEntityFrameworkStores<SkillSnapContext>()
+            .AddDefaultTokenProviders();
         
         // Add services to the container.
         builder.Services.AddAuthorization();
@@ -55,6 +62,8 @@ public class Program
         app.UseHttpsRedirection();
         app.UseRouting();
 
+        // Authentication must come before Authorization
+        app.UseAuthentication();
         app.UseAuthorization();
         
         app.UseCors("ClientPolicy");

@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SkillSnap.Shared.Models;
 
 namespace SkillSnap.Api.Data;
 
-public class SkillSnapContext : DbContext
+public class SkillSnapContext : IdentityDbContext<ApplicationUser>
 {
     public SkillSnapContext(DbContextOptions<SkillSnapContext> options) : base(options) { }
 
