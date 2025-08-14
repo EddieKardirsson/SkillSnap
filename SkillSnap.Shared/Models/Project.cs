@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace SkillSnap.Shared.Models;
 
@@ -21,5 +22,6 @@ public class Project
     public int PortfolioUserId { get; set; }
 
     // EF sets this; null-forgiving avoids nullable warnings
-    public PortfolioUser PortfolioUser { get; set; } = null!;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PortfolioUser? PortfolioUser { get; set; }
 }

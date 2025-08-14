@@ -1,4 +1,5 @@
 @SkillSnap.Api_HostAddress = http://localhost:5025
+@access_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhMmE5ZGYyYS1lMGFmLTQ5NGQtODQ3My0xNzM0YTM5MGQwYzEiLCJlbWFpbCI6ImFkbWluQHNraWxsc25hcC5jb20iLCJqdGkiOiIyN2ExODQyZi04ODIyLTQ2NWItODg3My0wYTk4MzI3YjM0YzQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBZG1pbiIsImV4cCI6MTc1NTI2ODI0NX0.vT5VBWBW3S6eClKlJbb6eqmA_trNyvk1I_0xa2uYO8U
 
 GET {{SkillSnap.Api_HostAddress}}/weatherforecast/
 Accept: application/json
@@ -12,3 +13,33 @@ Content-Type: application/json
   "password": "Admin123!"
 }
 
+###
+POST https://localhost:7261/api/Projects
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "Title": "Admin's Test Project",
+  "Description": "This is a project created by the admin user.",
+  "ImageUrl": "https://example.com/image.jpg",
+  "PortfolioUserId": 1
+}
+
+###
+POST https://localhost:7261/api/Skills
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "Name": "SQL",
+  "Level": "Beginner",
+  "PortfolioUserId": 1
+}
+
+###
+DELETE https://localhost:7261/api/Projects/3
+Authorization: Bearer {{access_token}}
+
+###
+DELETE https://localhost:7261/api/Skills/3
+Authorization: Bearer {{access_token}}

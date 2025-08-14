@@ -42,16 +42,31 @@ public class ProjectsController : ControllerBase
         return project;
     }
 
-    // POST: Requires authentication - only logged-in users can create projects
-    [HttpPost]
-    [Authorize]
-    public async Task<ActionResult<Project>> PostProject(Project project)
+// POST: Requires authentication - only logged-in users can create projects
+[HttpPost]
+[Authorize]
+public async Task<ActionResult<Project>> PostProject(Project project)
+{
+    // Remove PortfolioUser from ModelState validation since it's a navigation property
+    ModelState.Remove(nameof(Project.PortfolioUser));
+    
+    if (!ModelState.IsValid)
     {
-        _context.Projects.Add(project);
-        await _context.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetProject), new { id = project.Id }, project);
+        return BadRequest(ModelState);
     }
+    
+    // Verify the PortfolioUser exists
+    var portfolioUserExists = await _context.PortfolioUsers.AnyAsync(u => u.Id == project.PortfolioUserId);
+    if (!portfolioUserExists)
+    {
+        return BadRequest($"PortfolioUser with ID {project.PortfolioUserId} does not exist.");
+    }
+
+    _context.Projects.Add(project);
+    await _context.SaveChangesAsync();
+
+    return CreatedAtAction(nameof(GetProject), new { id = project.Id }, project);
+}
 
     // PUT: Requires authentication - only logged-in users can update projects
     [HttpPut("{id}")]

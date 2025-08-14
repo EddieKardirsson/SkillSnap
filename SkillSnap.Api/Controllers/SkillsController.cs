@@ -47,6 +47,19 @@ public class SkillsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<Skill>> PostSkill(Skill skill)
     {
+        ModelState.Remove(nameof(Skill.PortfolioUser));
+        
+        if(!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+        
+        var portfolioUserExists = await _context.PortfolioUsers.AnyAsync(u => u.Id == skill.PortfolioUserId);
+        if (!portfolioUserExists)
+        {
+            return BadRequest($"PortfolioUser with ID {skill.PortfolioUserId} does not exist.");
+        }
+        
         _context.Skills.Add(skill);
         await _context.SaveChangesAsync();
 

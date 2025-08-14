@@ -18,5 +18,5 @@ public class Skill
     [ForeignKey(nameof(PortfolioUser))]
     public int PortfolioUserId { get; set; }
 
-    public PortfolioUser PortfolioUser { get; set; } = null!;
+    public PortfolioUser? PortfolioUser { get; set; }
 }
