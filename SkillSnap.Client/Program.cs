@@ -25,6 +25,7 @@ public class Program
         // Register the services that connect to the API
         builder.Services.AddScoped<ProjectService>();
         builder.Services.AddScoped<SkillService>();
+        builder.Services.AddScoped<AuthService>();
 
         await builder.Build().RunAsync();
     }
