@@ -122,7 +122,8 @@ public class AuthController : ControllerBase
 
     private string GenerateJwtToken(ApplicationUser user)
     {
-        Env.Load("../Keys.env");
+        // Use the same path as Program.cs
+        Env.Load("Keys.env");
         var jwtKey = Env.GetString("JWT_KEY") ?? 
                      throw new InvalidOperationException("JWT_KEY environment variable is not set");
 
