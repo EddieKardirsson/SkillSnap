@@ -1,0 +1,54 @@
+@page "/session-test"
+@inject UserSessionService UserSession
+@inject AuthService AuthService
+@implements IDisposable
+
+<PageTitle>Session Test</PageTitle>
+
+<h3>Session State Management Test</h3>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5>User Session Info</h5>
+        <p><strong>Is Authenticated:</strong> @UserSession.IsAuthenticated</p>
+        <p><strong>Email:</strong> @UserSession.UserEmail</p>
+        <p><strong>Is Admin:</strong> @UserSession.IsAdmin</p>
+        <p><strong>Roles:</strong> @string.Join(", ", UserSession.UserRoles)</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5>Editing State</h5>
+        <p><strong>Editing Project:</strong> @UserSession.CurrentEditingProjectId</p>
+        <p><strong>Editing Skill:</strong> @UserSession.CurrentEditingSkillId</p>
+        
+        <button class="btn btn-primary me-2" @onclick="() => UserSession.SetEditingProject(123)">
+            Edit Project 123
+        </button>
+        <button class="btn btn-secondary me-2" @onclick="() => UserSession.SetEditingSkill(456)">
+            Edit Skill 456
+        </button>
+        <button class="btn btn-warning" @onclick="UserSession.ClearEditingState">
+            Clear Editing
+        </button>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Restore the session from localStorage if user refreshes page
+        await AuthService.IsAuthenticatedAsync();
+    }
+
+    protected override void OnInitialized()
+    {
+        UserSession.OnStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        UserSession.OnStateChanged -= StateHasChanged;
+    }
+}

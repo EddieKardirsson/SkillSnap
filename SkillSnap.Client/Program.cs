@@ -22,13 +22,13 @@ public class Program
         builder.Services.AddScoped(sp =>
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("SkillSnap.Api"));
 
+        // Register the UserSessionService first
+        builder.Services.AddScoped<UserSessionService>();
+        
         // Register the services that connect to the API
         builder.Services.AddScoped<ProjectService>();
         builder.Services.AddScoped<SkillService>();
         builder.Services.AddScoped<AuthService>();
-
-        // Register the UserSessionService as Scoped
-        builder.Services.AddScoped<UserSessionService>();
         
         await builder.Build().RunAsync();
     }

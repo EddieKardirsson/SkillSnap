@@ -10,12 +10,14 @@ public class AuthService
 {
     private readonly HttpClient _httpClient;
     private readonly IJSRuntime _jsRuntime;
+    private readonly UserSessionService _userSessionService;
     private string? _token;
 
-    public AuthService(HttpClient httpClient, IJSRuntime jsRuntime)
+    public AuthService(HttpClient httpClient, IJSRuntime jsRuntime, UserSessionService userSessionService)
     {
         _httpClient = httpClient;
         _jsRuntime = jsRuntime;
+        _userSessionService = userSessionService;
     }
 
     public event Action<bool>? AuthenticationStateChanged;
@@ -45,6 +47,10 @@ public class AuthService
                     await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "userRoles", JsonSerializer.Serialize(authResponse.Roles));
                     
                     SetAuthorizationHeader();
+                    
+                    // NEW: Update UserSessionService with login information
+                    _userSessionService.SetUserInfo(authResponse.Token, authResponse.Email, authResponse.Roles);
+                    
                     AuthenticationStateChanged?.Invoke(true);
                     return true;
                 }
@@ -83,6 +89,10 @@ public class AuthService
         await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "userRoles");
         
         _httpClient.DefaultRequestHeaders.Authorization = null;
+        
+        // NEW: Clear UserSessionService when logging out
+        _userSessionService.ClearUserInfo();
+        
         AuthenticationStateChanged?.Invoke(false);
     }
 
@@ -96,6 +106,10 @@ public class AuthService
             if (!string.IsNullOrEmpty(_token))
             {
                 SetAuthorizationHeader();
+                
+                // NEW: Restore UserSessionService from localStorage on page refresh
+                await RestoreUserSessionAsync();
+                
                 return true;
             }
         }
@@ -105,6 +119,26 @@ public class AuthService
         }
 
         return false;
+    }
+
+    // NEW: Method to restore user session from localStorage
+    private async Task RestoreUserSessionAsync()
+    {
+        try
+        {
+            var email = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "userEmail");
+            var rolesJson = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "userRoles");
+            
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(rolesJson) && !string.IsNullOrEmpty(_token))
+            {
+                var roles = JsonSerializer.Deserialize<List<string>>(rolesJson) ?? new List<string>();
+                _userSessionService.SetUserInfo(_token, email, roles);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error restoring user session: {ex.Message}");
+        }
     }
 
     public async Task<string?> GetUserEmailAsync()

@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace SkillSnap.Client.Services;
@@ -10,6 +11,7 @@ public class UserSessionService
     private List<string> _userRoles = new();
     private int? _currentEditingProjectId;
     private int? _currentEditingSkillId;
+    private string? _token;
 
     // User Authentication State
     public string? UserId 
@@ -32,11 +34,13 @@ public class UserSessionService
 
     public IReadOnlyList<string> UserRoles => _userRoles.AsReadOnly();
 
-    public bool IsAuthenticated => !string.IsNullOrEmpty(UserId);
+    public bool IsAuthenticated => !string.IsNullOrEmpty(_token) && !string.IsNullOrEmpty(UserId);
 
     public bool IsAdmin => UserRoles.Contains("Admin");
 
     public bool IsUser => UserRoles.Contains("User");
+
+    public string? Token => _token;
 
     // Current Editing State
     public int? CurrentEditingProjectId 
@@ -51,26 +55,27 @@ public class UserSessionService
         set => _currentEditingSkillId = value; 
     }
 
-    // Methods to manage user session
-    public void SetUserInfo(ClaimsPrincipal user)
+    // Methods to manage user session from JWT token
+    public void SetUserInfo(string token, string email, List<string> roles)
     {
-        if (user?.Identity?.IsAuthenticated == true)
+        _token = token;
+        _userEmail = email;
+        _userRoles = roles ?? new List<string>();
+
+        // Parse JWT token to extract user info
+        try
         {
-            _userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            _userName = user.FindFirst(ClaimTypes.Name)?.Value;
-            _userEmail = user.FindFirst(ClaimTypes.Email)?.Value;
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
             
-            // Extract roles
-            _userRoles.Clear();
-            var roleClaims = user.FindAll(ClaimTypes.Role);
-            foreach (var roleClaim in roleClaims)
-            {
-                _userRoles.Add(roleClaim.Value);
-            }
+            _userId = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            _userName = email; // Use email as username for now
         }
-        else
+        catch (Exception)
         {
+            // If token parsing fails, clear the session
             ClearUserInfo();
+            return;
         }
 
         // Notify components that state has changed
@@ -85,6 +90,7 @@ public class UserSessionService
         _userRoles.Clear();
         _currentEditingProjectId = null;
         _currentEditingSkillId = null;
+        _token = null;
         
         NotifyStateChanged();
     }
