@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using SkillSnap.Api.Data;
 using SkillSnap.Shared.Models;
 
@@ -11,35 +12,55 @@ namespace SkillSnap.Api.Controllers;
 public class SkillsController : ControllerBase
 {
     private readonly SkillSnapContext _context;
+    private readonly IMemoryCache _cache;
 
-    public SkillsController(SkillSnapContext context)
+    public SkillsController(SkillSnapContext context, IMemoryCache cache)
     {
         _context = context;
+        _cache = cache;
     }
 
     // GET: Public endpoint - anyone can view skills
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Skill>>> GetSkills()
     {
-        return await _context.Skills
-            .Include(s => s.PortfolioUser)
-            .ToListAsync();
+        const string cacheKey = "skills";
+        
+        if (!_cache.TryGetValue(cacheKey, out List<Skill>? skills))
+        {
+            skills = await _context.Skills
+                .Include(s => s.PortfolioUser)
+                .ToListAsync();
+            
+            // Cache for 5 minutes
+            _cache.Set(cacheKey, skills, TimeSpan.FromMinutes(5));
+        }
+
+        return Ok(skills);
     }
 
     // GET by ID: Public endpoint - anyone can view a specific skill
     [HttpGet("{id}")]
     public async Task<ActionResult<Skill>> GetSkill(int id)
     {
-        var skill = await _context.Skills
-            .Include(s => s.PortfolioUser)
-            .FirstOrDefaultAsync(s => s.Id == id);
-
-        if (skill == null)
+        string cacheKey = $"skill_{id}";
+        
+        if (!_cache.TryGetValue(cacheKey, out Skill? skill))
         {
-            return NotFound();
+            skill = await _context.Skills
+                .Include(s => s.PortfolioUser)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (skill == null)
+            {
+                return NotFound();
+            }
+
+            // Cache individual skill for 10 minutes
+            _cache.Set(cacheKey, skill, TimeSpan.FromMinutes(10));
         }
 
-        return skill;
+        return Ok(skill);
     }
 
     // POST: Requires authentication - only logged-in users can create skills
@@ -63,6 +84,9 @@ public class SkillsController : ControllerBase
         _context.Skills.Add(skill);
         await _context.SaveChangesAsync();
 
+        // Invalidate cache when data changes
+        _cache.Remove("skills");
+
         return CreatedAtAction(nameof(GetSkill), new { id = skill.Id }, skill);
     }
 
@@ -81,6 +105,10 @@ public class SkillsController : ControllerBase
         try
         {
             await _context.SaveChangesAsync();
+            
+            // Invalidate cache when data changes
+            _cache.Remove("skills");
+            _cache.Remove($"skill_{id}");
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -110,6 +138,10 @@ public class SkillsController : ControllerBase
 
         _context.Skills.Remove(skill);
         await _context.SaveChangesAsync();
+
+        // Invalidate cache when data changes
+        _cache.Remove("skills");
+        _cache.Remove($"skill_{id}");
 
         return NoContent();
     }

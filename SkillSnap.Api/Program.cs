@@ -52,6 +52,9 @@ public class Program
         // Add services to the container.
         builder.Services.AddAuthorization();
 
+        // Add Memory Cache for performance optimization
+        builder.Services.AddMemoryCache();
+
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
         

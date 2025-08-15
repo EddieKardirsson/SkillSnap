@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SkillSnap.Api.Data;
 using SkillSnap.Shared.Models;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace SkillSnap.Api.Controllers;
 
@@ -11,62 +12,85 @@ namespace SkillSnap.Api.Controllers;
 public class ProjectsController : ControllerBase
 {
     private readonly SkillSnapContext _context;
+    private readonly IMemoryCache _cache;
 
-    public ProjectsController(SkillSnapContext context)
+    public ProjectsController(SkillSnapContext context, IMemoryCache cache)
     {
         _context = context;
+        _cache = cache;
     }
 
     // GET: Public endpoint - anyone can view projects
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Project>>> GetProjects()
     {
-        return await _context.Projects
-            .Include(p => p.PortfolioUser)
-            .ToListAsync();
+        const string cacheKey = "projects";
+        
+        if (!_cache.TryGetValue(cacheKey, out List<Project>? projects))
+        {
+            projects = await _context.Projects
+                .Include(p => p.PortfolioUser)
+                .ToListAsync();
+            
+            // Cache for 5 minutes
+            _cache.Set(cacheKey, projects, TimeSpan.FromMinutes(5));
+        }
+
+        return Ok(projects);
     }
 
     // GET by ID: Public endpoint - anyone can view a specific project
     [HttpGet("{id}")]
     public async Task<ActionResult<Project>> GetProject(int id)
     {
-        var project = await _context.Projects
-            .Include(p => p.PortfolioUser)
-            .FirstOrDefaultAsync(p => p.Id == id);
-
-        if (project == null)
+        string cacheKey = $"project_{id}";
+        
+        if (!_cache.TryGetValue(cacheKey, out Project? project))
         {
-            return NotFound();
+            project = await _context.Projects
+                .Include(p => p.PortfolioUser)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            // Cache individual project for 10 minutes
+            _cache.Set(cacheKey, project, TimeSpan.FromMinutes(10));
         }
 
-        return project;
+        return Ok(project);
     }
 
-// POST: Requires authentication - only logged-in users can create projects
-[HttpPost]
-[Authorize]
-public async Task<ActionResult<Project>> PostProject(Project project)
-{
-    // Remove PortfolioUser from ModelState validation since it's a navigation property
-    ModelState.Remove(nameof(Project.PortfolioUser));
-    
-    if (!ModelState.IsValid)
+    // POST: Requires authentication - only logged-in users can create projects
+    [HttpPost]
+    [Authorize]
+    public async Task<ActionResult<Project>> PostProject(Project project)
     {
-        return BadRequest(ModelState);
-    }
+        // Remove PortfolioUser from ModelState validation since it's a navigation property
+        ModelState.Remove(nameof(Project.PortfolioUser));
+        
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+        
+        // Verify the PortfolioUser exists
+        var portfolioUserExists = await _context.PortfolioUsers.AnyAsync(u => u.Id == project.PortfolioUserId);
+        if (!portfolioUserExists)
+        {
+            return BadRequest($"PortfolioUser with ID {project.PortfolioUserId} does not exist.");
+        }
     
-    // Verify the PortfolioUser exists
-    var portfolioUserExists = await _context.PortfolioUsers.AnyAsync(u => u.Id == project.PortfolioUserId);
-    if (!portfolioUserExists)
-    {
-        return BadRequest($"PortfolioUser with ID {project.PortfolioUserId} does not exist.");
+        _context.Projects.Add(project);
+        await _context.SaveChangesAsync();
+    
+        // Invalidate cache when data changes
+        _cache.Remove("projects");
+    
+        return CreatedAtAction(nameof(GetProject), new { id = project.Id }, project);
     }
-
-    _context.Projects.Add(project);
-    await _context.SaveChangesAsync();
-
-    return CreatedAtAction(nameof(GetProject), new { id = project.Id }, project);
-}
 
     // PUT: Requires authentication - only logged-in users can update projects
     [HttpPut("{id}")]
@@ -83,6 +107,10 @@ public async Task<ActionResult<Project>> PostProject(Project project)
         try
         {
             await _context.SaveChangesAsync();
+            
+            // Invalidate cache when data changes
+            _cache.Remove("projects");
+            _cache.Remove($"project_{id}");
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -112,6 +140,10 @@ public async Task<ActionResult<Project>> PostProject(Project project)
 
         _context.Projects.Remove(project);
         await _context.SaveChangesAsync();
+
+        // Invalidate cache when data changes
+        _cache.Remove("projects");
+        _cache.Remove($"project_{id}");
 
         return NoContent();
     }
