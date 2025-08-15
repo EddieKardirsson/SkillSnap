@@ -43,3 +43,16 @@ Authorization: Bearer {{access_token}}
 ###
 DELETE https://localhost:7261/api/Skills/3
 Authorization: Bearer {{access_token}}
+
+### Test Projects Cache Miss (first call)
+GET https://localhost:7261/api/Projects
+
+### Test Projects Cache Hit (second call - should be much faster)
+GET https://localhost:7261/api/Projects
+
+### Test Skills Cache Miss (first call)
+GET https://localhost:7261/api/Skills
+
+### Test Skills Cache Hit (second call - should be much faster)
+GET https://localhost:7261/api/Skills
+
