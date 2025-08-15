@@ -29,6 +29,7 @@ public class SkillsController : ControllerBase
         if (!_cache.TryGetValue(cacheKey, out List<Skill>? skills))
         {
             skills = await _context.Skills
+                .AsNoTracking() // Optimize for read-only queries
                 .Include(s => s.PortfolioUser)
                 .ToListAsync();
             
@@ -48,6 +49,7 @@ public class SkillsController : ControllerBase
         if (!_cache.TryGetValue(cacheKey, out Skill? skill))
         {
             skill = await _context.Skills
+                .AsNoTracking() // Optimize for read-only queries
                 .Include(s => s.PortfolioUser)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -75,7 +77,10 @@ public class SkillsController : ControllerBase
             return BadRequest(ModelState);
         }
         
-        var portfolioUserExists = await _context.PortfolioUsers.AnyAsync(u => u.Id == skill.PortfolioUserId);
+        // Optimize existence check with AsNoTracking
+        var portfolioUserExists = await _context.PortfolioUsers
+            .AsNoTracking()
+            .AnyAsync(u => u.Id == skill.PortfolioUserId);
         if (!portfolioUserExists)
         {
             return BadRequest($"PortfolioUser with ID {skill.PortfolioUserId} does not exist.");
@@ -149,6 +154,8 @@ public class SkillsController : ControllerBase
     // Helper method to check if a skill exists
     private bool SkillExists(int id)
     {
-        return _context.Skills.Any(e => e.Id == id);
+        return _context.Skills
+            .AsNoTracking() // Optimize for existence check
+            .Any(e => e.Id == id);
     }
 }

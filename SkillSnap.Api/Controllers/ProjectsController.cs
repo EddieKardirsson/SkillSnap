@@ -29,6 +29,7 @@ public class ProjectsController : ControllerBase
         if (!_cache.TryGetValue(cacheKey, out List<Project>? projects))
         {
             projects = await _context.Projects
+                .AsNoTracking() // Optimize for read-only queries
                 .Include(p => p.PortfolioUser)
                 .ToListAsync();
             
@@ -48,6 +49,7 @@ public class ProjectsController : ControllerBase
         if (!_cache.TryGetValue(cacheKey, out Project? project))
         {
             project = await _context.Projects
+                .AsNoTracking() // Optimize for read-only queries
                 .Include(p => p.PortfolioUser)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
@@ -76,8 +78,10 @@ public class ProjectsController : ControllerBase
             return BadRequest(ModelState);
         }
         
-        // Verify the PortfolioUser exists
-        var portfolioUserExists = await _context.PortfolioUsers.AnyAsync(u => u.Id == project.PortfolioUserId);
+        // Optimize existence check with AsNoTracking
+        var portfolioUserExists = await _context.PortfolioUsers
+            .AsNoTracking()
+            .AnyAsync(u => u.Id == project.PortfolioUserId);
         if (!portfolioUserExists)
         {
             return BadRequest($"PortfolioUser with ID {project.PortfolioUserId} does not exist.");
@@ -151,6 +155,8 @@ public class ProjectsController : ControllerBase
     // Helper method to check if a project exists
     private bool ProjectExists(int id)
     {
-        return _context.Projects.Any(e => e.Id == id);
+        return _context.Projects
+            .AsNoTracking() // Optimize for existence check
+            .Any(e => e.Id == id);
     }
 }

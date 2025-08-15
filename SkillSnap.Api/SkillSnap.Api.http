@@ -37,7 +37,7 @@ Content-Type: application/json
 }
 
 ###
-DELETE https://localhost:7261/api/Projects/3
+DELETE https://localhost:7261/api/Projects/5
 Authorization: Bearer {{access_token}}
 
 ###
