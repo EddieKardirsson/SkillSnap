@@ -1,9 +1,132 @@
 @page "/skills"
+@inject SkillService SkillService
+@inject UserSessionService UserSession
+@implements IDisposable
+
 <PageTitle>Skills - SkillSnap</PageTitle>
 
-<h3>Skills</h3>
-<p>Skills management will be implemented here.</p>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Skills</h3>
+        
+        @if (UserSession.IsAuthenticated)
+        {
+            <button class="btn btn-primary" @onclick="ShowAddForm">
+                <i class="bi bi-plus-circle"></i> Add Skill
+            </button>
+        }
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (skills.Any())
+    {
+        <div class="row">
+            @foreach (var skill in skills)
+            {
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title d-flex justify-content-between align-items-center">
+                                @skill.Name
+                                <span class="badge bg-@GetLevelBadgeColor(skill.Level)">@skill.Level</span>
+                            </h5>
+                            
+                            @if (skill.PortfolioUser != null)
+                            {
+                                <p class="card-text"><small class="text-muted">By: @skill.PortfolioUser.Name</small></p>
+                            }
+                            
+                            @if (UserSession.IsAdmin)
+                            {
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSkill(skill.Id)">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <h4>No Skills Found</h4>
+            <p>There are currently no skills to display.</p>
+            @if (UserSession.IsAuthenticated)
+            {
+                <button class="btn btn-primary" @onclick="ShowAddForm">Add the first skill!</button>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert alert-info mt-3">@message</div>
+    }
+</div>
 
 @code {
-    
+    private List<Skill> skills = new();
+    private bool isLoading = true;
+    private string message = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserSession.OnStateChanged += StateHasChanged;
+        await LoadSkills();
+    }
+
+    private async Task LoadSkills()
+    {
+        isLoading = true;
+        try
+        {
+            skills = await SkillService.GetSkillsAsync();
+        }
+        catch (Exception ex)
+        {
+            message = $"Error loading skills: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetLevelBadgeColor(string level)
+    {
+        return level.ToLower() switch
+        {
+            "beginner" => "success",
+            "intermediate" => "warning",
+            "advanced" => "danger",
+            _ => "secondary"
+        };
+    }
+
+    private void ShowAddForm()
+    {
+        message = "Add Skill functionality will be implemented soon!";
+    }
+
+    private async Task DeleteSkill(int skillId)
+    {
+        if (UserSession.IsAdmin)
+        {
+            message = $"Delete skill {skillId} functionality will be implemented soon!";
+        }
+    }
+
+    public void Dispose()
+    {
+        UserSession.OnStateChanged -= StateHasChanged;
+    }
 }
