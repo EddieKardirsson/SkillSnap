@@ -27,6 +27,9 @@ public class Program
         builder.Services.AddScoped<SkillService>();
         builder.Services.AddScoped<AuthService>();
 
+        // Register the UserSessionService as Scoped
+        builder.Services.AddScoped<UserSessionService>();
+        
         await builder.Build().RunAsync();
     }
 }
