@@ -150,12 +150,25 @@ public class PortfolioUsersController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        // Verify user is authenticated
+        // Get the authenticated user's ID
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized("Unable to identify user");
         }
+
+        // Check if user already has a portfolio
+        var existingPortfolio = await _context.PortfolioUsers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.ApplicationUserId == userId);
+        
+        if (existingPortfolio != null)
+        {
+            return BadRequest("User already has a portfolio profile");
+        }
+
+        // Set the ApplicationUserId to the current user
+        portfolioUser.ApplicationUserId = userId;
 
         _context.PortfolioUsers.Add(portfolioUser);
         await _context.SaveChangesAsync();
@@ -165,8 +178,8 @@ public class PortfolioUsersController : ControllerBase
         _logger.LogInformation("Cache invalidated: portfolio users list due to new profile creation");
 
         stopwatch.Stop();
-        _logger.LogInformation("PostPortfolioUser completed in {ElapsedMs}ms - Profile {ProfileId} created", 
-            stopwatch.ElapsedMilliseconds, portfolioUser.Id);
+        _logger.LogInformation("PostPortfolioUser completed in {ElapsedMs}ms - Profile {ProfileId} created for user {UserId}", 
+            stopwatch.ElapsedMilliseconds, portfolioUser.Id, userId);
 
         return CreatedAtAction(nameof(GetPortfolioUser), new { id = portfolioUser.Id }, portfolioUser);
     }
@@ -188,9 +201,32 @@ public class PortfolioUsersController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        // Check if user is admin or owns this profile
+        // Get current user info
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var isAdmin = User.IsInRole("Admin");
-        // Note: You'll need to implement ownership logic based on your design
+        
+        if (string.IsNullOrEmpty(currentUserId))
+        {
+            return Unauthorized("Unable to identify user");
+        }
+
+        // Check ownership - user can only edit their own profile (unless admin)
+        var existingPortfolio = await _context.PortfolioUsers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == id);
+            
+        if (existingPortfolio == null)
+        {
+            return NotFound("Portfolio not found");
+        }
+
+        if (!isAdmin && existingPortfolio.ApplicationUserId != currentUserId)
+        {
+            return Forbid("You can only edit your own profile");
+        }
+
+        // Ensure ApplicationUserId doesn't change (security measure)
+        portfolioUser.ApplicationUserId = existingPortfolio.ApplicationUserId;
         
         _context.Entry(portfolioUser).State = EntityState.Modified;
 
@@ -216,8 +252,8 @@ public class PortfolioUsersController : ControllerBase
         }
 
         stopwatch.Stop();
-        _logger.LogInformation("PutPortfolioUser({ProfileId}) completed in {ElapsedMs}ms", 
-            id, stopwatch.ElapsedMilliseconds);
+        _logger.LogInformation("PutPortfolioUser({ProfileId}) completed in {ElapsedMs}ms by user {UserId}", 
+            id, stopwatch.ElapsedMilliseconds, currentUserId);
 
         return NoContent();
     }
