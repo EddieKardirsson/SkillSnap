@@ -1,5 +1,4 @@
-﻿@using SkillSnap.Client.Services
-@inject UserSessionService UserSession
+﻿@inject UserSessionService UserSession
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 @implements IDisposable
@@ -71,8 +70,9 @@
             <!-- User Info Display -->
             <div class="nav-item px-3 mt-3">
                 <div class="nav-link text-muted" style="cursor: default;">
-                    <span class="bi bi-person-circle" aria-hidden="true"></span> 
-                    @UserSession.UserEmail
+                    <p style="color: white"><span class="bi bi-person-circle" aria-hidden="true"></span> 
+                        @UserSession.UserEmail
+                    </p>
                     @if (UserSession.IsAdmin)
                     {
                         <span class="badge bg-warning ms-2">Admin</span>
