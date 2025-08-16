@@ -232,7 +232,7 @@ namespace SkillSnap.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PortfolioUsers");
+                    b.ToTable("PortfolioUsers", (string)null);
                 });
 
             modelBuilder.Entity("SkillSnap.Shared.Models.Project", b =>
@@ -263,7 +263,7 @@ namespace SkillSnap.Api.Migrations
 
                     b.HasIndex("PortfolioUserId");
 
-                    b.ToTable("Projects");
+                    b.ToTable("Projects", (string)null);
                 });
 
             modelBuilder.Entity("SkillSnap.Shared.Models.Skill", b =>
@@ -289,7 +289,7 @@ namespace SkillSnap.Api.Migrations
 
                     b.HasIndex("PortfolioUserId");
 
-                    b.ToTable("Skills");
+                    b.ToTable("Skills", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

@@ -18,9 +18,10 @@ public class PortfolioUser
     [Url, MaxLength(2048)]
     public string ProfileImageUrl { get; set; } = string.Empty;
 
-    // One-to-One relationship with ApplicationUser
+    // One-to-One relationship with ApplicationUser (foreign key only on this side)
+    [Required]
     [ForeignKey(nameof(ApplicationUser))]
-    public string? ApplicationUserId { get; set; }
+    public string ApplicationUserId { get; set; } = string.Empty;
     
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ApplicationUser? ApplicationUser { get; set; }

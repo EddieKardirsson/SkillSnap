@@ -20,8 +20,8 @@ public class SkillSnapContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<ApplicationUser>()
             .HasOne(au => au.PortfolioUser)
             .WithOne(pu => pu.ApplicationUser)
-            .HasForeignKey<ApplicationUser>(au => au.PortfolioUserId)
-            .IsRequired(false); // Optional relationship
+            .HasForeignKey<PortfolioUser>(pu => pu.ApplicationUserId)
+            .IsRequired(true); // Each PortfolioUser must have an ApplicationUser
 
         // PortfolioUser (1) -> Project (many)
         modelBuilder.Entity<Project>()
