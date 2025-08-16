@@ -16,6 +16,13 @@ public class SkillSnapContext : IdentityDbContext<ApplicationUser>
     {
         base.OnModelCreating(modelBuilder);
 
+        // Configure One-to-One relationship between ApplicationUser and PortfolioUser
+        modelBuilder.Entity<ApplicationUser>()
+            .HasOne(au => au.PortfolioUser)
+            .WithOne(pu => pu.ApplicationUser)
+            .HasForeignKey<ApplicationUser>(au => au.PortfolioUserId)
+            .IsRequired(false); // Optional relationship
+
         // PortfolioUser (1) -> Project (many)
         modelBuilder.Entity<Project>()
             .HasOne(p => p.PortfolioUser)
