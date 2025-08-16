@@ -1,8 +1,8 @@
 @SkillSnap.Api_HostAddress = http://localhost:5025
 @access_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhMmE5ZGYyYS1lMGFmLTQ5NGQtODQ3My0xNzM0YTM5MGQwYzEiLCJlbWFpbCI6ImFkbWluQHNraWxsc25hcC5jb20iLCJqdGkiOiIyN2ExODQyZi04ODIyLTQ2NWItODg3My0wYTk4MzI3YjM0YzQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBZG1pbiIsImV4cCI6MTc1NTI2ODI0NX0.vT5VBWBW3S6eClKlJbb6eqmA_trNyvk1I_0xa2uYO8U
 
-GET {{SkillSnap.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+###
+GET https://localhost:7261/api/PortfolioUsers
 
 ###
 POST https://localhost:7261/api/Auth/login
