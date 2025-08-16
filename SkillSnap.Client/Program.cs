@@ -29,6 +29,7 @@ public class Program
         builder.Services.AddScoped<ProjectService>();
         builder.Services.AddScoped<SkillService>();
         builder.Services.AddScoped<AuthService>();
+        builder.Services.AddScoped<PortfolioUserService>();
         
         await builder.Build().RunAsync();
     }
