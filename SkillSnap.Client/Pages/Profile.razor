@@ -1,0 +1,331 @@
+@page "/profile"
+@using SkillSnap.Client.Services
+@inject PortfolioUserService PortfolioService
+@inject UserSessionService UserSession
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>My Profile - SkillSnap</PageTitle>
+
+<div class="container mt-4">
+    @if (UserSession.IsAuthenticated)
+    {
+        @if (isLoading)
+        {
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading your profile...</p>
+            </div>
+        }
+        else if (currentProfile == null && !showCreateForm)
+        {
+            <!-- No Profile Found - Show Create Option -->
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-person-plus display-1 text-muted mb-3"></i>
+                            <h3>Create Your Profile</h3>
+                            <p class="text-muted mb-4">
+                                Welcome to SkillSnap! You don't have a profile yet.
+                                Create your portfolio to showcase your skills and projects.
+                            </p>
+                            <button class="btn btn-primary btn-lg" @onclick="ShowCreateForm">
+                                <i class="bi bi-plus-circle me-2"></i>Create My Profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (showCreateForm || isEditing)
+        {
+            <!-- Create/Edit Form -->
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>@(isEditing ? "Edit Profile" : "Create Profile")</h4>
+                        </div>
+                        <div class="card-body">
+                            <EditForm Model="profileForm" OnValidSubmit="HandleSaveProfile">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary class="text-danger mb-3" />
+
+                                <div class="mb-3">
+                                    <label class="form-label">Name:</label>
+                                    <InputText @bind-Value="profileForm.Name" class="form-control" placeholder="Your full name" />
+                                    <ValidationMessage For="@(() => profileForm.Name)" class="text-danger" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Bio:</label>
+                                    <InputTextArea @bind-Value="profileForm.Bio" class="form-control" rows="4"
+                                                   placeholder="Tell us about yourself, your skills, and experience..." />
+                                    <ValidationMessage For="@(() => profileForm.Bio)" class="text-danger" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Profile Image URL:</label>
+                                    <InputText @bind-Value="profileForm.ProfileImageUrl" class="form-control"
+                                               placeholder="https://example.com/your-photo.jpg" />
+                                    <ValidationMessage For="@(() => profileForm.ProfileImageUrl)" class="text-danger" />
+                                    <div class="form-text">Optional: Add a URL to your profile picture</div>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success" disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        @(isEditing ? "Update Profile" : "Create Profile")
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" @onclick="CancelEdit">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </EditForm>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (currentProfile != null)
+        {
+            <!-- Display Profile -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            @if (!string.IsNullOrEmpty(currentProfile.ProfileImageUrl))
+                            {
+                                <img src="@currentProfile.ProfileImageUrl" alt="@currentProfile.Name"
+                                     class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                            }
+                            else
+                            {
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mb-3 mx-auto"
+                                     style="width: 150px; height: 150px;">
+                                    <i class="bi bi-person-fill text-white" style="font-size: 4rem;"></i>
+                                </div>
+                            }
+                            <h4>@currentProfile.Name</h4>
+                            <p class="text-muted">@UserSession.UserEmail</p>
+                            <button class="btn btn-outline-primary" @onclick="StartEdit">
+                                <i class="bi bi-pencil me-2"></i>Edit Profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>About</h5>
+                            <p>@(string.IsNullOrEmpty(currentProfile.Bio) ? "No bio provided yet." : currentProfile.Bio)</p>
+
+                            <hr />
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-folder me-2"></i>Projects</h6>
+                                    <p class="text-muted">@currentProfile.Projects.Count project(s)</p>
+                                    @if (currentProfile.Projects.Any())
+                                    {
+                                        <ul class="list-unstyled">
+                                            @foreach (var project in currentProfile.Projects.Take(3))
+                                            {
+                                                <li class="mb-2">
+                                                    <strong>@project.Title</strong>
+                                                    <br><small class="text-muted">@project.Description</small>
+                                                </li>
+                                            }
+                                        </ul>
+                                        @if (currentProfile.Projects.Count > 3)
+                                        {
+                                            <small class="text-muted">And @(currentProfile.Projects.Count - 3) more...</small>
+                                        }
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-award me-2"></i>Skills</h6>
+                                    <p class="text-muted">@currentProfile.Skills.Count skill(s)</p>
+                                    @if (currentProfile.Skills.Any())
+                                    {
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var skill in currentProfile.Skills.Take(6))
+                                            {
+                                                <span class="badge bg-@GetSkillBadgeColor(skill.Level)">@skill.Name</span>
+                                            }
+                                        </div>
+                                        @if (currentProfile.Skills.Count > 6)
+                                        {
+                                            <small class="text-muted mt-2 d-block">And @(currentProfile.Skills.Count - 6) more...</small>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert alert-info mt-3">@message</div>
+        }
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mt-3">@errorMessage</div>
+        }
+    }
+    else
+    {
+        <!-- Not Authenticated -->
+        <div class="text-center">
+            <h3>Authentication Required</h3>
+            <p>Please <a href="/login">login</a> to view your profile.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private PortfolioUser? currentProfile;
+    private PortfolioUser profileForm = new();
+    private bool isLoading = true;
+    private bool showCreateForm = false;
+    private bool isEditing = false;
+    private bool isSaving = false;
+    private string message = "";
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserSession.OnStateChanged += StateHasChanged;
+
+        if (UserSession.IsAuthenticated)
+        {
+            await LoadProfile();
+        }
+        else
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadProfile()
+    {
+        isLoading = true;
+        errorMessage = "";
+
+        try
+        {
+            currentProfile = await PortfolioService.GetMyProfileAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading profile: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ShowCreateForm()
+    {
+        showCreateForm = true;
+        profileForm = new PortfolioUser();
+    }
+
+    private void StartEdit()
+    {
+        if (currentProfile != null)
+        {
+            isEditing = true;
+            profileForm = new PortfolioUser
+            {
+                Id = currentProfile.Id,
+                Name = currentProfile.Name,
+                Bio = currentProfile.Bio,
+                ProfileImageUrl = currentProfile.ProfileImageUrl
+            };
+        }
+    }
+
+    private void CancelEdit()
+    {
+        showCreateForm = false;
+        isEditing = false;
+        profileForm = new();
+        message = "";
+        errorMessage = "";
+    }
+
+    private async Task HandleSaveProfile()
+    {
+        isSaving = true;
+        errorMessage = "";
+        message = "";
+
+        try
+        {
+            if (isEditing)
+            {
+                var success = await PortfolioService.UpdatePortfolioAsync(profileForm.Id, profileForm);
+                if (success)
+                {
+                    message = "Profile updated successfully!";
+                    await LoadProfile();
+                    isEditing = false;
+                }
+                else
+                {
+                    errorMessage = "Failed to update profile. Please try again.";
+                }
+            }
+            else
+            {
+                var createdProfile = await PortfolioService.CreatePortfolioAsync(profileForm);
+                if (createdProfile != null)
+                {
+                    message = "Profile created successfully!";
+                    currentProfile = createdProfile;
+                    showCreateForm = false;
+                }
+                else
+                {
+                    errorMessage = "Failed to create profile. Please try again.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving profile: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private string GetSkillBadgeColor(string level)
+    {
+        return level.ToLower() switch
+        {
+            "beginner" => "success",
+            "intermediate" => "warning",
+            "advanced" => "danger",
+            _ => "secondary"
+        };
+    }
+
+    public void Dispose()
+    {
+        UserSession.OnStateChanged -= StateHasChanged;
+    }
+}
