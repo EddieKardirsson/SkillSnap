@@ -1,4 +1,7 @@
-﻿@inherits LayoutComponentBase
+﻿@inject AuthService AuthService
+@inject UserSessionService UserSession
+@inherits LayoutComponentBase
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -14,3 +17,35 @@
         </article>
     </main>
 </div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Restore authentication state on app startup
+        await RestoreAuthenticationState();
+    }
+
+    private async Task RestoreAuthenticationState()
+    {
+        try
+        {
+            // Check if user has a valid token in localStorage
+            var isAuthenticated = await AuthService.IsAuthenticatedAsync();
+            
+            if (isAuthenticated)
+            {
+                // The IsAuthenticatedAsync method already calls RestoreUserSessionAsync
+                // which should populate the UserSessionService
+                Console.WriteLine("Authentication restored successfully");
+            }
+            else
+            {
+                Console.WriteLine("No valid authentication found");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error restoring authentication state: {ex.Message}");
+        }
+    }
+}
