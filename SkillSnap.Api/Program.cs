@@ -83,7 +83,13 @@ public class Program
 
         var app = builder.Build();
 
-        // Initialize roles and admin user, if it doesn't already exist.
+        // Development: Clear database and reset identity columns, uncomment when needed
+        /*if (app.Environment.IsDevelopment())
+        {
+            await ClearAndResetDatabase(app.Services);
+        }*/
+
+        // Initialize roles and admin user after clearing database
         await SeedData.InitializeAsync(app.Services);
 
         // Configure the HTTP request pipeline.
@@ -105,5 +111,39 @@ public class Program
         app.MapControllers();
 
         app.Run();
+    }
+
+    private static async Task ClearAndResetDatabase(IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<SkillSnapContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+        try
+        {
+            logger.LogInformation("Clearing database and resetting identity columns...");
+
+            // Clear all data (in correct order to avoid foreign key constraints)
+            await context.Database.ExecuteSqlRawAsync("DELETE FROM Skills");
+            await context.Database.ExecuteSqlRawAsync("DELETE FROM Projects");
+            await context.Database.ExecuteSqlRawAsync("DELETE FROM PortfolioUsers");
+            await context.Database.ExecuteSqlRawAsync("DELETE FROM AspNetUserRoles");
+            await context.Database.ExecuteSqlRawAsync("DELETE FROM AspNetUsers");
+            await context.Database.ExecuteSqlRawAsync("DELETE FROM AspNetRoles");
+
+            // Reset SQLite sequence numbers (equivalent to IDENTITY reset)
+            await context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence WHERE name='PortfolioUsers'");
+            await context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence WHERE name='Projects'");
+            await context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence WHERE name='Skills'");
+
+            // Note: AspNetUsers and AspNetRoles use GUIDs, so no sequence reset needed
+
+            logger.LogInformation("Database cleared and identity columns reset successfully");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error clearing database");
+            throw;
+        }
     }
 }
