@@ -43,4 +43,45 @@ public class SkillService
             return null;
         }
     }
+
+    public async Task<Skill?> GetSkillAsync(int id)
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<Skill>($"api/skills/{id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting skill {id}: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task<bool> UpdateSkillAsync(int id, Skill updatedSkill)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync($"api/skills/{id}", updatedSkill);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating skill: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteSkillAsync(int id)
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"api/skills/{id}");
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting skill: {ex.Message}");
+            return false;
+        }
+    }
 }

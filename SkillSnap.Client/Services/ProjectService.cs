@@ -43,4 +43,45 @@ public class ProjectService
             return null;
         }
     }
+
+    public async Task<Project?> GetProjectAsync(int id)
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<Project>($"api/projects/{id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting project {id}: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task<bool> UpdateProjectAsync(int id, Project updatedProject)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync($"api/projects/{id}", updatedProject);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating project: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteProjectAsync(int id)
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"api/projects/{id}");
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting project: {ex.Message}");
+            return false;
+        }
+    }
 }

@@ -1,6 +1,7 @@
 @page "/skills"
 @inject SkillService SkillService
 @inject UserSessionService UserSession
+@inject PortfolioUserService PortfolioService
 @implements IDisposable
 
 <PageTitle>Skills - SkillSnap</PageTitle>
@@ -17,6 +18,57 @@
         }
     </div>
 
+    @if (showForm)
+    {
+        <!-- Add/Edit Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>@(isEditing ? "Edit Skill" : "Add New Skill")</h5>
+            </div>
+            <div class="card-body">
+                <EditForm Model="skillForm" OnValidSubmit="HandleSaveSkill">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger mb-3" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Skill Name:</label>
+                        <InputText @bind-Value="skillForm.Name" class="form-control" placeholder="e.g., C#, JavaScript, SQL" />
+                        <ValidationMessage For="@(() => skillForm.Name)" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Proficiency Level:</label>
+                        <InputSelect @bind-Value="skillForm.Level" class="form-control">
+                            <option value="">Select Level</option>
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => skillForm.Level)" class="text-danger" />
+                        <div class="form-text">
+                            <strong>Beginner:</strong> Basic understanding, learning fundamentals<br>
+                            <strong>Intermediate:</strong> Can work independently, solid understanding<br>
+                            <strong>Advanced:</strong> Expert level, can mentor others
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            @(isEditing ? "Update Skill" : "Add Skill")
+                        </button>
+                        <button type="button" class="btn btn-secondary" @onclick="CancelForm">
+                            Cancel
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
     @if (isLoading)
     {
         <div class="text-center">
@@ -31,8 +83,8 @@
             @foreach (var skill in skills)
             {
                 <div class="col-md-6 col-lg-4 mb-3">
-                    <div class="card">
-                        <div class="card-body">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
                             <h5 class="card-title d-flex justify-content-between align-items-center">
                                 @skill.Name
                                 <span class="badge bg-@GetLevelBadgeColor(skill.Level)">@skill.Level</span>
@@ -40,14 +92,22 @@
                             
                             @if (skill.PortfolioUser != null)
                             {
-                                <p class="card-text"><small class="text-muted">By: @skill.PortfolioUser.Name</small></p>
+                                <p class="card-text flex-grow-1"><small class="text-muted">By: @skill.PortfolioUser.Name</small></p>
                             }
                             
-                            @if (UserSession.IsAdmin)
+                            @if (CanUserEditSkill(skill))
                             {
-                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSkill(skill.Id)">
-                                    <i class="bi bi-trash"></i> Delete
-                                </button>
+                                <div class="mt-auto d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => StartEditSkill(skill)">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                    @if (UserSession.IsAdmin)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSkill(skill.Id)">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    }
+                                </div>
                             }
                         </div>
                     </div>
@@ -69,19 +129,31 @@
 
     @if (!string.IsNullOrEmpty(message))
     {
-        <div class="alert alert-info mt-3">@message</div>
+        <div class="alert alert-success mt-3">@message</div>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">@errorMessage</div>
     }
 </div>
 
 @code {
     private List<Skill> skills = new();
+    private Skill skillForm = new();
+    private PortfolioUser? userProfile;
     private bool isLoading = true;
+    private bool showForm = false;
+    private bool isEditing = false;
+    private bool isSaving = false;
     private string message = "";
+    private string errorMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
         UserSession.OnStateChanged += StateHasChanged;
         await LoadSkills();
+        await LoadUserProfile();
     }
 
     private async Task LoadSkills()
@@ -93,12 +165,34 @@
         }
         catch (Exception ex)
         {
-            message = $"Error loading skills: {ex.Message}";
+            errorMessage = $"Error loading skills: {ex.Message}";
         }
         finally
         {
             isLoading = false;
         }
+    }
+
+    private async Task LoadUserProfile()
+    {
+        if (UserSession.IsAuthenticated)
+        {
+            try
+            {
+                userProfile = await PortfolioService.GetMyProfileAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading user profile: {ex.Message}");
+            }
+        }
+    }
+
+    private bool CanUserEditSkill(Skill skill)
+    {
+        if (!UserSession.IsAuthenticated) return false;
+        if (UserSession.IsAdmin) return true;
+        return userProfile != null && skill.PortfolioUserId == userProfile.Id;
     }
 
     private string GetLevelBadgeColor(string level)
@@ -114,14 +208,110 @@
 
     private void ShowAddForm()
     {
-        message = "Add Skill functionality will be implemented soon!";
+        if (userProfile == null)
+        {
+            errorMessage = "You must have a profile to add skills. Please create your profile first.";
+            return;
+        }
+
+        showForm = true;
+        isEditing = false;
+        skillForm = new Skill { PortfolioUserId = userProfile.Id };
+        message = "";
+        errorMessage = "";
+    }
+
+    private void StartEditSkill(Skill skill)
+    {
+        showForm = true;
+        isEditing = true;
+        skillForm = new Skill
+        {
+            Id = skill.Id,
+            Name = skill.Name,
+            Level = skill.Level,
+            PortfolioUserId = skill.PortfolioUserId
+        };
+        message = "";
+        errorMessage = "";
+    }
+
+    private void CancelForm()
+    {
+        showForm = false;
+        isEditing = false;
+        skillForm = new();
+        message = "";
+        errorMessage = "";
+    }
+
+    private async Task HandleSaveSkill()
+    {
+        isSaving = true;
+        errorMessage = "";
+        message = "";
+
+        try
+        {
+            if (isEditing)
+            {
+                var success = await SkillService.UpdateSkillAsync(skillForm.Id, skillForm);
+                if (success)
+                {
+                    message = "Skill updated successfully!";
+                    await LoadSkills();
+                    CancelForm();
+                }
+                else
+                {
+                    errorMessage = "Failed to update skill. Please try again.";
+                }
+            }
+            else
+            {
+                var createdSkill = await SkillService.AddSkillAsync(skillForm);
+                if (createdSkill != null)
+                {
+                    message = "Skill added successfully!";
+                    await LoadSkills();
+                    CancelForm();
+                }
+                else
+                {
+                    errorMessage = "Failed to add skill. Please try again.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving skill: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
     }
 
     private async Task DeleteSkill(int skillId)
     {
-        if (UserSession.IsAdmin)
+        if (!UserSession.IsAdmin) return;
+
+        try
         {
-            message = $"Delete skill {skillId} functionality will be implemented soon!";
+            var success = await SkillService.DeleteSkillAsync(skillId);
+            if (success)
+            {
+                message = "Skill deleted successfully!";
+                await LoadSkills();
+            }
+            else
+            {
+                errorMessage = "Failed to delete skill.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting skill: {ex.Message}";
         }
     }
 
