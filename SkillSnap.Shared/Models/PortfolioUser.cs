@@ -19,7 +19,7 @@ public class PortfolioUser
     public string ProfileImageUrl { get; set; } = string.Empty;
 
     // One-to-One relationship with ApplicationUser (foreign key only on this side)
-    [Required]
+    // Remove [Required] for form validation, but keep it required at database level
     [ForeignKey(nameof(ApplicationUser))]
     public string ApplicationUserId { get; set; } = string.Empty;
     
