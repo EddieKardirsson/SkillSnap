@@ -117,12 +117,13 @@ public class PortfolioUsersController : ControllerBase
 
         _logger.LogInformation("Looking for profile for user: {UserId} ({Email})", userId, userEmail);
 
-        // For now, we'll use email to match since PortfolioUser doesn't have ApplicationUserId reference
-        // This is a design consideration - you might want to add ApplicationUserId to PortfolioUser later
+        // Use the proper foreign key relationship to find the user's portfolio
         var portfolioUser = await _context.PortfolioUsers
+            .AsNoTracking()
             .Include(p => p.Projects)
             .Include(p => p.Skills)
-            .FirstOrDefaultAsync(p => p.Name == userEmail); // Temporary matching logic
+            .Include(p => p.ApplicationUser)
+            .FirstOrDefaultAsync(p => p.ApplicationUserId == userId);
 
         stopwatch.Stop();
         
@@ -132,7 +133,8 @@ public class PortfolioUsersController : ControllerBase
             return NotFound("No profile found for current user");
         }
 
-        _logger.LogInformation("GetMyProfile for user {UserId} completed in {ElapsedMs}ms", userId, stopwatch.ElapsedMilliseconds);
+        _logger.LogInformation("GetMyProfile for user {UserId} completed in {ElapsedMs}ms - Found profile {ProfileId}", 
+            userId, stopwatch.ElapsedMilliseconds, portfolioUser.Id);
         return Ok(portfolioUser);
     }
 
